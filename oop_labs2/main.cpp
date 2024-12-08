@@ -26,9 +26,11 @@ int main() {
         abilityManager.useAbility(board, manager);
 
         // Размещаем корабль
-        Ship& ship1 = manager.getShip(1);
+        Ship& ship1 = manager.getShip(3);
         board.placeShip(ship1, 5, 5, Ship::Vertical, &manager);
 
+        Ship& ship2 = manager.getShip(2);
+        board.placeShip(ship2, 0, 2, Ship::Horizontal, &manager);   
         // Атакуем клетку (5,7)
         board.attack(5, 7, manager);
 
@@ -39,7 +41,7 @@ int main() {
 
         // Проверка исключения атаки за пределами
         try {
-            board.attack(100, 100, manager);
+            board.attack(2, 3, manager);
         } catch (const OutOfBoundsAttackException& e) {
             std::cout << "Исключение при атаке: " << e.what() << std::endl;
         }

@@ -9,6 +9,5 @@ void DoubleDamage::apply(GameBoard& board, ShipManager& manager) {
     (void)board;    // чтобы подавить предупреждение о неиспользуемом параметре
     (void)manager;
     std::cout << "Применена способность 'Двойной урон'. Следующая попадание нанесет дополнительный урон.\n";
-    // Предполагается, что логика установки флага DoubleDamage флага будет в board:
     board.enableDoubleDamageFlag(true);
 }

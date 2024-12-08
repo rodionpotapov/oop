@@ -11,7 +11,7 @@ class ShipManager;
 
 class GameBoard {
 public:
-    enum CellStatus { Unknown, Empty, ShipCell };
+    enum CellStatus { Unknown, Empty, ShipCell, HitShipCell }; // Добавлено HitShipCell
 
     GameBoard(size_t width, size_t height);
     GameBoard(const GameBoard& other);
@@ -33,7 +33,7 @@ private:
     std::vector<std::vector<CellStatus>> grid;
     bool doubleDamageNextHit = false;
 
-    std::vector<std::vector<std::pair<int,int>>> shipMapping;
+    std::vector<std::vector<std::pair<int, int>>> shipMapping; // К какому кораблю и сегменту относится клетка
 
     bool canPlaceShip(const Ship& ship, size_t startX, size_t startY, Ship::Orientation orientation) const;
     void fillShipMapping(Ship& ship, size_t startX, size_t startY, Ship::Orientation orientation, ShipManager* manager);

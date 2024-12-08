@@ -5,7 +5,7 @@
 
 GameBoard::GameBoard(size_t width, size_t height)
     : width(width), height(height), grid(height, std::vector<CellStatus>(width, Unknown)),
-      shipMapping(height, std::vector<std::pair<int,int>>(width, std::make_pair(-1,-1))) {}
+      shipMapping(height, std::vector<std::pair<int, int>>(width, std::make_pair(-1, -1))) {}
 
 GameBoard::GameBoard(const GameBoard& other)
     : width(other.width), height(other.height), grid(other.grid), doubleDamageNextHit(other.doubleDamageNextHit),
@@ -88,19 +88,28 @@ bool GameBoard::attack(size_t x, size_t y, ShipManager& manager) {
         throw OutOfBoundsAttackException();
     }
 
-    if (grid[y][x] == ShipCell) {
+    if (grid[y][x] == ShipCell || grid[y][x] == HitShipCell) {
         auto [shipIndex, segmentIndex] = shipMapping[y][x];
         if (shipIndex >= 0 && segmentIndex >= 0) {
-            Ship& ship = manager.getShip((size_t)shipIndex);
-            ship.hitSegment((size_t)segmentIndex);
-            if (doubleDamageNextHit) {
-                if (ship.getSegmentState((size_t)segmentIndex) != Ship::Destroyed) {
-                    ship.hitSegment((size_t)segmentIndex);
-                }
+            Ship& ship = manager.getShip(static_cast<size_t>(shipIndex));
+            ship.hitSegment(static_cast<size_t>(segmentIndex));
+
+            // Обновляем состояние клетки в зависимости от состояния сегмента корабля
+            auto segmentState = ship.getSegmentState(static_cast<size_t>(segmentIndex));
+            if (segmentState == Ship::Damage) {
+                grid[y][x] = HitShipCell; // Корабль повреждён
+            } else if (segmentState == Ship::Destroyed) {
+                grid[y][x] = HitShipCell; // Корабль уничтожен
+            }
+
+            // Двойной урон (если активирован)
+            if (doubleDamageNextHit && segmentState != Ship::Destroyed) {
+                ship.hitSegment(static_cast<size_t>(segmentIndex));
                 std::cout << "Дополнительный урон нанесен!\n";
                 doubleDamageNextHit = false;
             }
-            grid[y][x] = Empty;
+
+            // Если корабль полностью уничтожен, добавляем способность
             if (ship.isDestroyed()) {
                 manager.awardRandomAbility();
             }
@@ -108,11 +117,9 @@ bool GameBoard::attack(size_t x, size_t y, ShipManager& manager) {
             std::cout << "Попадание по кораблю " << shipIndex << ", сегмент " << segmentIndex << "!\n";
             return true;
         }
-        grid[y][x] = Empty;
-        return true;
     }
 
-    grid[y][x] = Empty;
+    grid[y][x] = Empty; // Клетка становится пустой, если выстрел мимо
     std::cout << "Мимо!\n";
     return false;
 }
@@ -125,30 +132,30 @@ bool GameBoard::canPlaceShip(const Ship& ship, size_t startX, size_t startY, Shi
             if (grid[startY][startX + i] != Unknown) return false;
         }
         for (size_t i = 0; i < length; ++i) {
-            for (int dy = -1; dy <= 1; ++dy) {
-                for (int dx = -1; dx <= 1; ++dx) {
+            for (int dx = -1; dx <= 1; ++dx) {
+                for (int dy = -1; dy <= 1; ++dy) {
                     int nx = (int)startX + (int)i + dx;
                     int ny = (int)startY + dy;
-                    if (nx >= 0 && nx < (int)width && ny >=0 && ny < (int)height) {
-                        if ((dx != 0 || dy != 0) && grid[ny][nx] == ShipCell) {
+                    if (nx >= 0 && nx < (int)width && ny >= 0 && ny < (int)height) {
+                        if (grid[ny][nx] == ShipCell) {
                             return false;
                         }
                     }
                 }
             }
         }
-    } else {
+    } else { // Вертикальная ориентация
         if (startY + length > height) return false;
         for (size_t i = 0; i < length; ++i) {
             if (grid[startY + i][startX] != Unknown) return false;
         }
         for (size_t i = 0; i < length; ++i) {
-            for (int dy = -1; dy <= 1; ++dy) {
-                for (int dx = -1; dx <= 1; ++dx) {
+            for (int dx = -1; dx <= 1; ++dx) {
+                for (int dy = -1; dy <= 1; ++dy) {
                     int nx = (int)startX + dx;
                     int ny = (int)startY + (int)i + dy;
-                    if (nx >= 0 && nx < (int)width && ny >=0 && ny < (int)height) {
-                        if ((dx != 0 || dy != 0) && grid[ny][nx] == ShipCell) {
+                    if (nx >= 0 && nx < (int)width && ny >= 0 && ny < (int)height) {
+                        if (grid[ny][nx] == ShipCell) {
                             return false;
                         }
                     }
@@ -164,7 +171,7 @@ void GameBoard::fillShipMapping(Ship& ship, size_t startX, size_t startY, Ship::
         int shipIndex = -1;
         for (size_t i = 0; i < manager->getShipCount(); ++i) {
             if (&manager->getShip(i) == &ship) {
-                shipIndex = (int)i;
+                shipIndex = static_cast<int>(i);
                 break;
             }
         }
@@ -174,7 +181,7 @@ void GameBoard::fillShipMapping(Ship& ship, size_t startX, size_t startY, Ship::
             for (size_t i = 0; i < length; ++i) {
                 size_t x = startX + (orientation == Ship::Horizontal ? i : 0);
                 size_t y = startY + (orientation == Ship::Vertical ? i : 0);
-                shipMapping[y][x] = std::make_pair(shipIndex, (int)i);
+                shipMapping[y][x] = std::make_pair(shipIndex, static_cast<int>(i));
             }
         }
     }

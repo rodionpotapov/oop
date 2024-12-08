@@ -9,7 +9,6 @@ RandomStrike::RandomStrike() {}
 
 void RandomStrike::apply(GameBoard& board, ShipManager& manager) {
     (void)board; // Подавляем предупреждение об неиспользуемом параметре, 
-                 // если логика не требует обращения к board
 
     std::vector<size_t> aliveShips;
     for (size_t i = 0; i < manager.getShipCount(); ++i) {
